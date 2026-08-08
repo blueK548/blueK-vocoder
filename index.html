@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Audacity-Style Vocoder</title>
+  <title>BlueK Vocoder</title>
   <style>
     :root {
       --bg: #0d0f14;
@@ -16,8 +16,13 @@
       --danger: #ff5c7a;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    @font-face {
+  font-family: "Fredoka One";
+  src: url("font/fredoka-one/fredoka-one.woff2") format("woff2");
+}
+
+body {
+  font-family: "Fredoka One", sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -239,7 +244,7 @@
   </style>
 </head>
 <body>
-  <h1>Audacity-Style Vocoder</h1>
+  <h1>BlueK Vocoder</h1>
   <p class="subtitle">
     Multiband vocoder matching Audacity’s algorithm.<br>
     File 1 = <strong>modulator</strong> · File 2 = <strong>carrier</strong>.
@@ -247,13 +252,13 @@
 
   <div class="card">
     <div class="drop-zone" id="dropZoneMod">
-      <div class="icon">🎙️</div>
+      <div class="icon">Input</div>
       <p><strong>1. Modulator</strong> — voice / input (drop or click)</p>
       <div class="filename" id="fileNameMod"></div>
       <input type="file" id="fileInputMod" accept="audio/*">
     </div>
     <div class="drop-zone" id="dropZoneCar" style="margin-top:0.6rem">
-      <div class="icon">🎹</div>
+      <div class="icon">Carrier</div>
       <p><strong>2. Carrier</strong> — synth / pad / noise (drop or click)</p>
       <div class="filename" id="fileNameCar"></div>
       <input type="file" id="fileInputCar" accept="audio/*">
@@ -336,7 +341,7 @@
     </div>
   </div>
 
-  <p class="footer">All processing happens in your browser. No data is uploaded.</p>
+  <p class="footer">This has audacity vocoder in it.</p>
 
   <script>
     // ---------- DOM ----------
@@ -860,7 +865,7 @@
       if (!processedBlobUrl) return;
       const a = document.createElement('a');
       a.href = processedBlobUrl;
-      a.download = modFileName + '_vocoded.wav';
+      a.download = modFileName + '_bluekded.wav';
 
       a.click();
     });
