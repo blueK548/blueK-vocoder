@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audacity-Style Vocoder</title>
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --surface: #161a22;
+      --border: #2a3140;
+      --accent: #00e5c3;
+      --accent-dim: #00b89c;
+      --text: #e8ecf4;
+      --muted: #8b95a8;
+      --danger: #ff5c7a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      background-image:
+        radial-gradient(ellipse at 20% 0%, rgba(0, 229, 195, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(100, 80, 255, 0.06) 0%, transparent 50%);
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+      background: linear-gradient(135deg, var(--accent), #7b6cff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      max-width: 460px;
+      line-height: 1.4;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 1.75rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 1.25rem;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(0, 229, 195, 0.05);
+    }
+    .drop-zone input { display: none; }
+    .drop-zone .icon { font-size: 2rem; margin-bottom: 0.4rem; opacity: 0.7; }
+    .drop-zone p { color: var(--muted); font-size: 0.9rem; }
+    .drop-zone .filename {
+      color: var(--accent);
+      font-weight: 500;
+      margin-top: 0.45rem;
+      word-break: break-all;
+      font-size: 0.85rem;
+    }
+    .controls {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.1rem;
+    }
+    button {
+      flex: 1;
+      min-width: 100px;
+      padding: 0.65rem 0.9rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s, background 0.2s;
+    }
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-primary { background: var(--accent); color: #0d0f14; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-dim); }
+    .btn-secondary {
+      background: #252b38;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) { background: #2e3648; }
+    .params {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-bottom: 1.1rem;
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    select {
+      background: #1c212c;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.4rem 0.5rem;
+      font-size: 0.85rem;
+    }
+    .value-display {
+      color: var(--text);
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+    .status {
+      font-size: 0.85rem;
+      color: var(--muted);
+      min-height: 1.3em;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .status.error { color: var(--danger); }
+    .status.ok { color: var(--accent); }
+    audio { display: none; }
+    .section-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 0.45rem;
+    }
+    .audio-block { margin-bottom: 1.05rem; }
+    .waveform-wrap {
+      position: relative;
+      width: 100%;
+      height: 72px;
+      background: #0f1218;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 0.45rem;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .waveform-wrap canvas { display: block; width: 100%; height: 100%; }
+    .playhead {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: var(--accent);
+      pointer-events: none;
+      left: 0;
+      box-shadow: 0 0 6px rgba(0, 229, 195, 0.6);
+    }
+    .transport {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: #1c212c;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.45rem 0.55rem;
+    }
+    .transport button {
+      flex: none;
+      min-width: 0;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #252b38;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .transport button:hover:not(:disabled) {
+      background: #2e3648;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .transport button.playing {
+      background: var(--accent);
+      color: #0d0f14;
+      border-color: var(--accent);
+    }
+    .transport .time {
+      flex: 1;
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+      text-align: center;
+      min-width: 85px;
+    }
+    .progress-wrap {
+      flex: 1.3;
+      height: 6px;
+      background: #2a3140;
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 3px;
+      pointer-events: none;
+    }
+    .footer {
+      margin-top: 1.4rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Audacity-Style Vocoder</h1>
+  <p class="subtitle">
+    Multiband vocoder matching Audacity’s algorithm.<br>
+    File 1 = <strong>modulator</strong> · File 2 = <strong>carrier</strong>.
+  </p>
+
+  <div class="card">
+    <div class="drop-zone" id="dropZoneMod">
+      <div class="icon">🎙️</div>
+      <p><strong>1. Modulator</strong> — voice / input (drop or click)</p>
+      <div class="filename" id="fileNameMod"></div>
+      <input type="file" id="fileInputMod" accept="audio/*">
+    </div>
+    <div class="drop-zone" id="dropZoneCar" style="margin-top:0.6rem">
+      <div class="icon">🎹</div>
+      <p><strong>2. Carrier</strong> — synth / pad / noise (drop or click)</p>
+      <div class="filename" id="fileNameCar"></div>
+      <input type="file" id="fileInputCar" accept="audio/*">
+    </div>
+
+    <div class="params">
+      <label>
+        Bands
+        <input type="range" id="bands" min="10" max="80" value="40" step="1">
+        <span class="value-display" id="bandsVal">40</span>
+      </label>
+      <label>
+        Distance
+        <input type="range" id="distance" min="1" max="60" value="20" step="1">
+        <span class="value-display" id="distanceVal">20</span>
+      </label>
+      <label>
+        Carrier Level %
+        <input type="range" id="carrierPct" min="0" max="100" value="100" step="1">
+        <span class="value-display" id="carrierVal">100</span>
+      </label>
+      <label>
+        Extra Noise %
+        <input type="range" id="noisePct" min="0" max="100" value="0" step="1">
+        <span class="value-display" id="noiseVal">0</span>
+      </label>
+      <label>
+        Radar Needles %
+        <input type="range" id="radarPct" min="0" max="100" value="0" step="1">
+        <span class="value-display" id="radarVal">0</span>
+      </label>
+      <label>
+        Radar Freq (Hz)
+        <input type="range" id="radarFreq" min="1" max="100" value="30" step="1">
+        <span class="value-display" id="radarFreqVal">30</span>
+      </label>
+    </div>
+
+
+
+    <div class="controls">
+      <button class="btn-primary" id="processBtn" disabled>Process</button>
+      <button class="btn-secondary" id="reprocessBtn" disabled>Reprocess</button>
+      <button class="btn-secondary" id="downloadBtn" disabled>Download WAV</button>
+    </div>
+
+    <div class="status" id="status">Ready — load modulator + carrier files</div>
+
+
+    <div class="audio-block" id="originalBlock" style="display:none">
+      <div class="section-title">Original (Modulator)</div>
+      <div class="waveform-wrap" data-target="original">
+        <canvas id="originalWaveform"></canvas>
+        <div class="playhead" id="originalPlayhead"></div>
+      </div>
+      <audio id="originalAudio"></audio>
+      <div class="transport" data-target="original">
+        <button type="button" class="play-btn" title="Play">▶</button>
+        <button type="button" class="pause-btn" title="Pause">⏸</button>
+        <button type="button" class="stop-btn" title="Stop">⏹</button>
+        <div class="progress-wrap"><div class="progress-bar"></div></div>
+        <span class="time">0:00 / 0:00</span>
+      </div>
+    </div>
+
+    <div class="audio-block" id="processedBlock" style="display:none">
+      <div class="section-title">Vocoded Output</div>
+      <div class="waveform-wrap" data-target="processed">
+        <canvas id="processedWaveform"></canvas>
+        <div class="playhead" id="processedPlayhead"></div>
+      </div>
+      <audio id="processedAudio"></audio>
+      <div class="transport" data-target="processed">
+        <button type="button" class="play-btn" title="Play">▶</button>
+        <button type="button" class="pause-btn" title="Pause">⏸</button>
+        <button type="button" class="stop-btn" title="Stop">⏹</button>
+        <div class="progress-wrap"><div class="progress-bar"></div></div>
+        <span class="time">0:00 / 0:00</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer">All processing happens in your browser. No data is uploaded.</p>
+
+  <script>
+    // ---------- DOM ----------
+    const dropZoneMod = document.getElementById('dropZoneMod');
+    const dropZoneCar = document.getElementById('dropZoneCar');
+    const fileInputMod = document.getElementById('fileInputMod');
+    const fileInputCar = document.getElementById('fileInputCar');
+    const fileNameMod = document.getElementById('fileNameMod');
+    const fileNameCar = document.getElementById('fileNameCar');
+    const processBtn = document.getElementById('processBtn');
+    const reprocessBtn = document.getElementById('reprocessBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const statusEl = document.getElementById('status');
+    const originalAudio = document.getElementById('originalAudio');
+    const processedAudio = document.getElementById('processedAudio');
+    const originalBlock = document.getElementById('originalBlock');
+    const processedBlock = document.getElementById('processedBlock');
+
+    const bandsSlider = document.getElementById('bands');
+    const distanceSlider = document.getElementById('distance');
+    const carrierPctSlider = document.getElementById('carrierPct');
+    const noisePctSlider = document.getElementById('noisePct');
+    const radarPctSlider = document.getElementById('radarPct');
+    const radarFreqSlider = document.getElementById('radarFreq');
+
+    // ---------- State ----------
+    let modArrayBuffer = null;
+    let carArrayBuffer = null;
+    let modFileName = 'modulator';
+    let originalDecodedBuffer = null;
+    let carrierDecodedBuffer = null;
+    let processedBuffer = null;
+    let processedBlobUrl = null;
+
+    function canProcess() {
+      return !!(modArrayBuffer && carArrayBuffer);
+    }
+    function updateProcessButtons() {
+      processBtn.disabled = !canProcess();
+      reprocessBtn.disabled = !canProcess() || !processedBuffer;
+    }
+
+
+    // ---------- UI helpers ----------
+    function setStatus(msg, type = '') {
+      statusEl.textContent = msg;
+      statusEl.className = 'status' + (type ? ' ' + type : '');
+    }
+
+    function updateSliders() {
+      document.getElementById('bandsVal').textContent = bandsSlider.value;
+      document.getElementById('distanceVal').textContent = distanceSlider.value;
+      document.getElementById('carrierVal').textContent = carrierPctSlider.value;
+      document.getElementById('noiseVal').textContent = noisePctSlider.value;
+      document.getElementById('radarVal').textContent = radarPctSlider.value;
+      document.getElementById('radarFreqVal').textContent = radarFreqSlider.value;
+    }
+    [bandsSlider, distanceSlider, carrierPctSlider, noisePctSlider, radarPctSlider, radarFreqSlider]
+      .forEach(s => s.addEventListener('input', updateSliders));
+    updateSliders();
+
+
+    // ---------- Transport ----------
+    function formatTime(sec) {
+      if (!isFinite(sec) || sec < 0) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return m + ':' + String(s).padStart(2, '0');
+    }
+
+    function getTransport(target) {
+      return document.querySelector(`.transport[data-target="${target}"]`);
+    }
+
+    function updatePlayhead(audio, target) {
+      const playhead = document.getElementById(target + 'Playhead');
+      if (!playhead || !audio.duration) return;
+      playhead.style.left = ((audio.currentTime / audio.duration) * 100) + '%';
+    }
+
+    function updateTransportUI(audio, target) {
+      const transport = getTransport(target);
+      if (!transport) return;
+      const bar = transport.querySelector('.progress-bar');
+      const timeEl = transport.querySelector('.time');
+      const playBtn = transport.querySelector('.play-btn');
+      const duration = audio.duration || 0;
+      const current = audio.currentTime || 0;
+      bar.style.width = (duration > 0 ? (current / duration) * 100 : 0) + '%';
+      timeEl.textContent = formatTime(current) + ' / ' + formatTime(duration);
+      if (audio.paused) playBtn.classList.remove('playing');
+      else playBtn.classList.add('playing');
+      updatePlayhead(audio, target);
+    }
+
+    function wireTransport(audio, target) {
+      const transport = getTransport(target);
+      if (!transport) return;
+      const playBtn = transport.querySelector('.play-btn');
+      const pauseBtn = transport.querySelector('.pause-btn');
+      const stopBtn = transport.querySelector('.stop-btn');
+      const progressWrap = transport.querySelector('.progress-wrap');
+
+      playBtn.addEventListener('click', () => {
+        if (target === 'processed') originalAudio.pause();
+        else processedAudio.pause();
+        audio.play().catch(() => {});
+      });
+      pauseBtn.addEventListener('click', () => audio.pause());
+      stopBtn.addEventListener('click', () => {
+        audio.pause();
+        audio.currentTime = 0;
+        updateTransportUI(audio, target);
+      });
+      progressWrap.addEventListener('click', (e) => {
+        if (!audio.duration) return;
+        const rect = progressWrap.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        audio.currentTime = ratio * audio.duration;
+        updateTransportUI(audio, target);
+      });
+      audio.addEventListener('timeupdate', () => updateTransportUI(audio, target));
+      audio.addEventListener('loadedmetadata', () => updateTransportUI(audio, target));
+      audio.addEventListener('play', () => updateTransportUI(audio, target));
+      audio.addEventListener('pause', () => updateTransportUI(audio, target));
+      audio.addEventListener('ended', () => {
+        audio.currentTime = 0;
+        updateTransportUI(audio, target);
+      });
+    }
+    wireTransport(originalAudio, 'original');
+    wireTransport(processedAudio, 'processed');
+
+    // Waveform click seek
+    document.querySelectorAll('.waveform-wrap').forEach(wrap => {
+      wrap.addEventListener('click', (e) => {
+        const target = wrap.dataset.target;
+        const audio = target === 'original' ? originalAudio : processedAudio;
+        if (!audio.duration) return;
+        const rect = wrap.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        audio.currentTime = ratio * audio.duration;
+        updateTransportUI(audio, target);
+      });
+    });
+
+    // ---------- Waveform drawing ----------
+    function drawWaveform(canvas, audioBuffer, colorL, colorR) {
+      if (!canvas || !audioBuffer) return;
+      const dpr = window.devicePixelRatio || 1;
+      const cssW = canvas.clientWidth || 400;
+      const cssH = canvas.clientHeight || 72;
+      canvas.width = Math.floor(cssW * dpr);
+      canvas.height = Math.floor(cssH * dpr);
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cssW, cssH);
+      ctx.fillStyle = '#0f1218';
+      ctx.fillRect(0, 0, cssW, cssH);
+
+      const numChannels = audioBuffer.numberOfChannels;
+      const length = audioBuffer.length;
+      const samplesPerPixel = Math.max(1, Math.floor(length / cssW));
+      const channelHeight = cssH / numChannels;
+
+      for (let ch = 0; ch < numChannels; ch++) {
+        const data = audioBuffer.getChannelData(ch);
+        const yMid = channelHeight * ch + channelHeight / 2;
+        const amp = channelHeight * 0.45;
+        ctx.beginPath();
+        ctx.strokeStyle = ch === 0 ? (colorL || '#00e5c3') : (colorR || '#7b6cff');
+        ctx.lineWidth = 1;
+        for (let x = 0; x < cssW; x++) {
+          const start = x * samplesPerPixel;
+          let min = 1, max = -1;
+          const end = Math.min(start + samplesPerPixel, length);
+          for (let i = start; i < end; i++) {
+            const v = data[i];
+            if (v < min) min = v;
+            if (v > max) max = v;
+          }
+          ctx.moveTo(x + 0.5, yMid - max * amp);
+          ctx.lineTo(x + 0.5, yMid - min * amp);
+        }
+        ctx.stroke();
+        if (numChannels > 1 && ch < numChannels - 1) {
+          ctx.strokeStyle = '#1c212c';
+          ctx.beginPath();
+          ctx.moveTo(0, channelHeight * (ch + 1));
+          ctx.lineTo(cssW, channelHeight * (ch + 1));
+          ctx.stroke();
+        }
+      }
+    }
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (originalDecodedBuffer)
+          drawWaveform(document.getElementById('originalWaveform'), originalDecodedBuffer, '#8b95a8', '#6b7588');
+        if (processedBuffer)
+          drawWaveform(document.getElementById('processedWaveform'), processedBuffer, '#00e5c3', '#7b6cff');
+      }, 120);
+    });
+
+    // ---------- File loading ----------
+    function wireDropZone(zone, input, onFile) {
+      zone.addEventListener('click', () => input.click());
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) onFile(e.dataTransfer.files[0]);
+      });
+      input.addEventListener('change', () => {
+        if (input.files.length) onFile(input.files[0]);
+      });
+    }
+
+    function isAudioFile(file) {
+      return file.type.startsWith('audio/') || /\.(mp3|wav|ogg|flac|m4a|aac|webm)$/i.test(file.name);
+    }
+
+    wireDropZone(dropZoneMod, fileInputMod, async (file) => {
+      if (!isAudioFile(file)) { setStatus('Please choose an audio file for modulator', 'error'); return; }
+      modFileName = file.name.replace(/\.[^.]+$/, '') || 'modulator';
+      fileNameMod.textContent = file.name;
+      setStatus('Loading modulator…');
+      try {
+        modArrayBuffer = await file.arrayBuffer();
+        if (originalAudio.src) URL.revokeObjectURL(originalAudio.src);
+        originalAudio.src = URL.createObjectURL(file);
+        originalBlock.style.display = 'block';
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        originalDecodedBuffer = await ctx.decodeAudioData(modArrayBuffer.slice(0));
+        await ctx.close();
+        requestAnimationFrame(() => {
+          drawWaveform(document.getElementById('originalWaveform'), originalDecodedBuffer, '#8b95a8', '#6b7588');
+          updateTransportUI(originalAudio, 'original');
+        });
+        updateProcessButtons();
+        setStatus(canProcess() ? 'Both files ready — click Process' : 'Modulator loaded — now add a carrier', 'ok');
+      } catch (err) {
+        setStatus('Failed to load modulator: ' + err.message, 'error');
+      }
+    });
+
+    wireDropZone(dropZoneCar, fileInputCar, async (file) => {
+      if (!isAudioFile(file)) { setStatus('Please choose an audio file for carrier', 'error'); return; }
+      fileNameCar.textContent = file.name;
+      setStatus('Loading carrier…');
+      try {
+        carArrayBuffer = await file.arrayBuffer();
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        carrierDecodedBuffer = await ctx.decodeAudioData(carArrayBuffer.slice(0));
+        await ctx.close();
+        updateProcessButtons();
+        setStatus(canProcess() ? 'Both files ready — click Process' : 'Carrier loaded — now add a modulator', 'ok');
+      } catch (err) {
+        setStatus('Failed to load carrier: ' + err.message, 'error');
+      }
+    });
+
+    // ---------- Core: Audacity-style vocoder ----------
+    processBtn.addEventListener('click', () => runProcess());
+    reprocessBtn.addEventListener('click', () => runProcess());
+
+    async function runProcess() {
+      if (!canProcess()) return;
+      originalAudio.pause();
+      processedAudio.pause();
+      processBtn.disabled = true;
+      reprocessBtn.disabled = true;
+      downloadBtn.disabled = true;
+      setStatus('Decoding…');
+
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const modDecoded = await audioCtx.decodeAudioData(modArrayBuffer.slice(0));
+        const carDecoded = await audioCtx.decodeAudioData(carArrayBuffer.slice(0));
+        await audioCtx.close();
+
+        setStatus('Running vocoder (this may take a few seconds)…');
+        await new Promise(r => setTimeout(r, 30));
+
+        processedBuffer = await applyAudacityVocoder(modDecoded, carDecoded, {
+          numBands: parseInt(bandsSlider.value, 10),
+          distance: parseFloat(distanceSlider.value),
+          carrierPct: parseFloat(carrierPctSlider.value),
+          noisePct: parseFloat(noisePctSlider.value),
+          radarPct: parseFloat(radarPctSlider.value),
+          radarFreq: parseFloat(radarFreqSlider.value)
+        });
+
+
+
+        const wavBlob = audioBufferToWav(processedBuffer);
+        if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
+        processedBlobUrl = URL.createObjectURL(wavBlob);
+        processedAudio.src = processedBlobUrl;
+        processedBlock.style.display = 'block';
+
+        requestAnimationFrame(() => {
+          drawWaveform(document.getElementById('processedWaveform'), processedBuffer, '#00e5c3', '#7b6cff');
+          processedAudio.currentTime = 0;
+          updateTransportUI(processedAudio, 'processed');
+        });
+
+        processBtn.disabled = false;
+        reprocessBtn.disabled = false;
+        downloadBtn.disabled = false;
+        setStatus(`Done — ${processedBuffer.duration.toFixed(1)}s stereo @ ${processedBuffer.sampleRate} Hz`, 'ok');
+      } catch (err) {
+        console.error(err);
+        setStatus('Processing failed: ' + err.message, 'error');
+        processBtn.disabled = false;
+        updateProcessButtons();
+      }
+    }
+
+    /**
+     * Audacity-style multiband vocoder (ported from vocoder.ny).
+     * File 1 = modulator, File 2 = carrier (looped/truncated to match length).
+     * Per band: bandpass both → envelope from |mod| → apply to carrier → bandpass again.
+     */
+
+    async function applyAudacityVocoder(modBuffer, carBuffer, opts) {
+      const { numBands, distance, carrierPct, noisePct, radarPct, radarFreq } = opts;
+      const sampleRate = modBuffer.sampleRate;
+      const length = modBuffer.length;
+
+      // Modulator → mono
+      const mod = new Float32Array(length);
+      if (modBuffer.numberOfChannels === 1) {
+        mod.set(modBuffer.getChannelData(0));
+      } else {
+        const L = modBuffer.getChannelData(0);
+        const R = modBuffer.getChannelData(1);
+        for (let i = 0; i < length; i++) mod[i] = (L[i] + R[i]) * 0.5;
+      }
+
+      // External carrier → stereo (resample/loop to match modulator length if needed)
+      const carL = new Float32Array(length);
+      const carR = new Float32Array(length);
+      {
+        const cLen = carBuffer.length;
+        const cCh = carBuffer.numberOfChannels;
+        const c0 = carBuffer.getChannelData(0);
+        const c1 = cCh > 1 ? carBuffer.getChannelData(1) : c0;
+        // Simple nearest-index stretch/loop if lengths differ
+        for (let i = 0; i < length; i++) {
+          const src = Math.min(i, cLen - 1); // truncate or pad with last sample; better: loop
+          const idx = i % cLen; // loop carrier to fill modulator length
+          carL[i] = c0[idx];
+          carR[i] = c1[idx];
+        }
+      }
+
+      // Audacity volume scaling
+      const trackVol = Math.sqrt(carrierPct / 100);
+      const noiseVol = Math.pow(noisePct / 100, 2);
+      const radarVol = Math.sqrt(radarPct / 100);
+
+      // Mix carrier level + optional noise/radar into carrier channels
+      for (let i = 0; i < length; i++) {
+        let n = 0;
+        if (noiseVol > 0) n += (Math.random() * 2 - 1) * noiseVol;
+        carL[i] = carL[i] * trackVol + n;
+        carR[i] = carR[i] * trackVol + n;
+      }
+      if (radarVol > 0 && radarFreq > 0) {
+        const period = Math.max(1, Math.round(sampleRate / radarFreq));
+        for (let i = 0; i < length; i += period) {
+          carL[i] += radarVol;
+          carR[i] += radarVol;
+        }
+      }
+
+      // Octaves from 20 Hz to ~Nyquist (Audacity uses /2.205 for compatibility)
+      const OCTAVES = Math.log2((sampleRate / 2.205) / 20);
+      const INTERVAL = (OCTAVES * 12) / numBands;
+      const q = Math.SQRT2 / (OCTAVES / numBands);
+
+      const outL = new Float32Array(length);
+      const outR = new Float32Array(length);
+
+      let f = 20 * Math.pow(2, INTERVAL / 24);
+
+      for (let b = 0; b < numBands; b++) {
+        if (f >= sampleRate * 0.48) break;
+
+        const modBP = makeBandpass(f, q, sampleRate);
+        const carBP1L = makeBandpass(f, q, sampleRate);
+        const carBP1R = makeBandpass(f, q, sampleRate);
+        const carBP2L = makeBandpass(f, q, sampleRate);
+        const carBP2R = makeBandpass(f, q, sampleRate);
+
+        // Envelope lowpass cutoff = f / Distance (Audacity)
+        const envCutoff = Math.max(1, f / distance);
+        const envLP = makeLowpass(envCutoff, sampleRate);
+
+        // Alternate bands panned for stereo image
+        const pan = (b % 2 === 0) ? -0.7 : 0.7;
+        const gL = Math.cos((pan + 1) * Math.PI / 4);
+        const gR = Math.sin((pan + 1) * Math.PI / 4);
+
+        for (let i = 0; i < length; i++) {
+          const m = modBP.process(mod[i]);
+          const env = envLP.process(Math.abs(m));
+
+          const cL = carBP1L.process(carL[i]);
+          const cR = carBP1R.process(carR[i]);
+
+          const bandL = carBP2L.process(env * cL);
+          const bandR = carBP2R.process(env * cR);
+
+          outL[i] += bandL * gL + bandR * (1 - gR) * 0.3;
+          outR[i] += bandR * gR + bandL * (1 - gL) * 0.3;
+        }
+
+        f = f * Math.pow(2, INTERVAL / 12);
+      }
+
+
+      // Peak normalize across both channels
+      let peak = 0;
+      for (let i = 0; i < length; i++) {
+        const a = Math.max(Math.abs(outL[i]), Math.abs(outR[i]));
+        if (a > peak) peak = a;
+      }
+      const scale = peak > 1e-9 ? 0.95 / peak : 1;
+      for (let i = 0; i < length; i++) {
+        outL[i] *= scale;
+        outR[i] *= scale;
+      }
+
+      const offline = new OfflineAudioContext(2, length, sampleRate);
+      const buf = offline.createBuffer(2, length, sampleRate);
+      buf.copyToChannel(outL, 0);
+      buf.copyToChannel(outR, 1);
+      return buf;
+    }
+
+
+    // RBJ bandpass
+    function makeBandpass(freq, Q, sampleRate) {
+      const w0 = 2 * Math.PI * freq / sampleRate;
+      const alpha = Math.sin(w0) / (2 * Q);
+      const cosw = Math.cos(w0);
+      const b0 = alpha, b1 = 0, b2 = -alpha;
+      const a0 = 1 + alpha, a1 = -2 * cosw, a2 = 1 - alpha;
+      const nb0 = b0 / a0, nb1 = b1 / a0, nb2 = b2 / a0;
+      const na1 = a1 / a0, na2 = a2 / a0;
+      let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+      return {
+        process(x) {
+          const y = nb0 * x + nb1 * x1 + nb2 * x2 - na1 * y1 - na2 * y2;
+          x2 = x1; x1 = x; y2 = y1; y1 = y;
+          return y;
+        }
+      };
+    }
+
+    // Simple one-pole lowpass (good enough for envelope; Audacity uses lowpass8)
+    function makeLowpass(freq, sampleRate) {
+      const x = Math.exp(-2 * Math.PI * freq / sampleRate);
+      let y = 0;
+      return {
+        process(v) {
+          y = v + x * (y - v);
+          return y;
+        }
+      };
+    }
+
+    // ---------- WAV encoder ----------
+    function audioBufferToWav(buffer) {
+      const numChannels = buffer.numberOfChannels;
+      const sampleRate = buffer.sampleRate;
+      const bitDepth = 16;
+      const bytesPerSample = bitDepth / 8;
+      const blockAlign = numChannels * bytesPerSample;
+      const dataLength = buffer.length * blockAlign;
+      const arrayBuffer = new ArrayBuffer(44 + dataLength);
+      const view = new DataView(arrayBuffer);
+
+      function ws(offset, str) {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+      }
+      ws(0, 'RIFF');
+      view.setUint32(4, 36 + dataLength, true);
+      ws(8, 'WAVE');
+      ws(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * blockAlign, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, bitDepth, true);
+      ws(36, 'data');
+      view.setUint32(40, dataLength, true);
+
+      let offset = 44;
+      const chans = [];
+      for (let c = 0; c < numChannels; c++) chans.push(buffer.getChannelData(c));
+      for (let i = 0; i < buffer.length; i++) {
+        for (let c = 0; c < numChannels; c++) {
+          let s = Math.max(-1, Math.min(1, chans[c][i]));
+          s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          view.setInt16(offset, s, true);
+          offset += 2;
+        }
+      }
+      return new Blob([arrayBuffer], { type: 'audio/wav' });
+    }
+
+    downloadBtn.addEventListener('click', () => {
+      if (!processedBlobUrl) return;
+      const a = document.createElement('a');
+      a.href = processedBlobUrl;
+      a.download = modFileName + '_vocoded.wav';
+
+      a.click();
+    });
+  </script>
+</body>
+</html>
