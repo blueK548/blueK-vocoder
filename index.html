@@ -376,17 +376,32 @@
       </label>
     </div>
 
-    <!-- BlueK custom controls -->
+    <!-- BlueK Vocodex-style controls -->
     <div class="params mode-bluek hidden" id="paramsBlueK">
       <label>
         Bands
-        <input type="range" id="bandsB" min="10" max="80" value="40" step="1">
-        <span class="value-display" id="bandsBVal">40</span>
+        <input type="range" id="bandsB" min="8" max="64" value="24" step="1">
+        <span class="value-display" id="bandsBVal">24</span>
       </label>
       <label>
-        Distance
-        <input type="range" id="distanceB" min="1" max="60" value="20" step="1">
-        <span class="value-display" id="distanceBVal">20</span>
+        Bandwidth
+        <input type="range" id="bwB" min="10" max="200" value="70" step="1">
+        <span class="value-display" id="bwBVal">70</span>
+      </label>
+      <label>
+        Attack
+        <input type="range" id="attackB" min="1" max="100" value="12" step="1">
+        <span class="value-display" id="attackBVal">12</span>
+      </label>
+      <label>
+        Release
+        <input type="range" id="releaseB" min="5" max="200" value="45" step="1">
+        <span class="value-display" id="releaseBVal">45</span>
+      </label>
+      <label>
+        Formant
+        <input type="range" id="formantB" min="-12" max="12" value="0" step="1">
+        <span class="value-display" id="formantBVal">0</span>
       </label>
       <label>
         Carrier Level %
@@ -394,29 +409,14 @@
         <span class="value-display" id="carrierBVal">100</span>
       </label>
       <label>
-        Extra Noise %
-        <input type="range" id="noiseB" min="0" max="100" value="0" step="1">
-        <span class="value-display" id="noiseBVal">0</span>
-      </label>
-      <label>
-        Radar Needles %
-        <input type="range" id="radarB" min="0" max="100" value="0" step="1">
-        <span class="value-display" id="radarBVal">0</span>
-      </label>
-      <label>
-        Radar Freq (Hz)
-        <input type="range" id="radarFreqB" min="1" max="100" value="30" step="1">
-        <span class="value-display" id="radarFreqBVal">30</span>
+        Noise / Whisper %
+        <input type="range" id="noiseB" min="0" max="100" value="8" step="1">
+        <span class="value-display" id="noiseBVal">8</span>
       </label>
       <label>
         Stereo Width
-        <input type="range" id="widthB" min="0" max="100" value="70" step="1">
-        <span class="value-display" id="widthBVal">70</span>
-      </label>
-      <label>
-        Envelope Smooth
-        <input type="range" id="smoothB" min="1" max="8" value="4" step="1">
-        <span class="value-display" id="smoothBVal">4</span>
+        <input type="range" id="widthB" min="0" max="100" value="55" step="1">
+        <span class="value-display" id="widthBVal">55</span>
       </label>
     </div>
 
@@ -460,7 +460,7 @@
     </div>
   </div>
   <p class="footer">
-    You can switch to modes!
+    You can switch modes!
   </p>
 
   <script>
@@ -484,7 +484,7 @@
         modeBlueKBtn.classList.add('active-bluek');
         paramsAudacity.classList.add('hidden');
         paramsBlueK.classList.remove('hidden');
-        modeHint.textContent = 'BlueK custom engine — stereo width, higher-order envelope, creative controls.';
+        modeHint.textContent = 'Vocodex-style (IL) — attack/release envelopes, formant shift, bandwidth control.';
       }
     }
     modeAudacityBtn.addEventListener('click', () => setMode('audacity'));
@@ -541,7 +541,7 @@
       s.addEventListener('input', () => { v.textContent = s.value; });
     }
     ['bandsA','distanceA','carrierA','noiseA','radarA','radarFreqA',
-     'bandsB','distanceB','carrierB','noiseB','radarB','radarFreqB','widthB','smoothB']
+     'bandsB','bwB','attackB','releaseB','formantB','carrierB','noiseB','widthB']
       .forEach(id => bindSlider(id, id + 'Val'));
 
     function formatTime(sec) {
@@ -901,16 +901,16 @@
         } else {
           processedBuffer = await applyBlueKVocoder(modDecoded, carDecoded, {
             numBands: parseInt(document.getElementById('bandsB').value, 10),
-            distance: parseFloat(document.getElementById('distanceB').value),
+            bandwidth: parseFloat(document.getElementById('bwB').value) / 100,
+            attack: parseFloat(document.getElementById('attackB').value),
+            release: parseFloat(document.getElementById('releaseB').value),
+            formant: parseFloat(document.getElementById('formantB').value),
             carrierPct: parseFloat(document.getElementById('carrierB').value),
             noisePct: parseFloat(document.getElementById('noiseB').value),
-            radarPct: parseFloat(document.getElementById('radarB').value),
-            radarFreq: parseFloat(document.getElementById('radarFreqB').value),
-            width: parseFloat(document.getElementById('widthB').value) / 100,
-            smoothOrder: parseInt(document.getElementById('smoothB').value, 10)
+            width: parseFloat(document.getElementById('widthB').value) / 100
           }, (pct, band, total) => {
             setProgress(pct);
-            setStatus('BlueK vocoding… band ' + band + '/' + total + ' (' + Math.round(pct) + '%)');
+            setStatus('Vocodex-style… band ' + band + '/' + total + ' (' + Math.round(pct) + '%)');
           });
         }
 
@@ -1052,10 +1052,20 @@
 
     // ── BLUEK CUSTOM VOCODER ─────────────────────────────────────────────
     async function applyBlueKVocoder(modBuffer, carBuffer, opts, onProgress) {
-      const { numBands, distance, carrierPct, noisePct, radarPct, radarFreq, width, smoothOrder } = opts;
+      // Vocodex-inspired (Image-Line) style:
+      //  - log-spaced bandpass bank on modulator → per-band envelope followers
+      //    with independent attack / release
+      //  - same bank on carrier (optionally formant-shifted) × envelopes
+      //  - bandwidth (Q) control, noise/whisper, stereo width
+      const {
+        numBands, bandwidth, attack, release, formant,
+        carrierPct, noisePct, width
+      } = opts;
+
       const sampleRate = modBuffer.sampleRate;
       const length = modBuffer.length;
 
+      // Mono modulator
       const mod = new Float32Array(length);
       if (modBuffer.numberOfChannels === 1) {
         mod.set(modBuffer.getChannelData(0));
@@ -1065,85 +1075,122 @@
         for (let i = 0; i < length; i++) mod[i] = (L[i] + R[i]) * 0.5;
       }
 
+      // Stereo carrier (loop if shorter)
       const carL = new Float32Array(length);
       const carR = new Float32Array(length);
       {
         const cLen = carBuffer.length;
         const c0 = carBuffer.getChannelData(0);
         const c1 = carBuffer.numberOfChannels > 1 ? carBuffer.getChannelData(1) : c0;
+        const cVol = Math.sqrt(carrierPct / 100);
         for (let i = 0; i < length; i++) {
           const idx = i % cLen;
-          carL[i] = c0[idx];
-          carR[i] = c1[idx];
+          carL[i] = c0[idx] * cVol;
+          carR[i] = c1[idx] * cVol;
         }
       }
 
-      const trackVol = Math.sqrt(carrierPct / 100);
-      const noiseVol = Math.pow(noisePct / 100, 2);
-      const radarVol = Math.sqrt(radarPct / 100);
-      for (let i = 0; i < length; i++) {
-        const n = noiseVol > 0 ? (Math.random() * 2 - 1) * noiseVol : 0;
-        carL[i] = carL[i] * trackVol + n;
-        carR[i] = carR[i] * trackVol + n;
-      }
-      if (radarVol > 0 && radarFreq > 0) {
-        const period = Math.max(1, Math.round(sampleRate / radarFreq));
-        for (let i = 0; i < length; i += period) {
-          carL[i] += radarVol;
-          carR[i] += radarVol;
+      // Noise / whisper layer (Vocodex-style unvoiced texture)
+      const noiseVol = Math.pow(noisePct / 100, 1.5) * 0.55;
+      if (noiseVol > 0) {
+        for (let i = 0; i < length; i++) {
+          const n = (Math.random() * 2 - 1) * noiseVol;
+          carL[i] += n;
+          carR[i] += n;
         }
       }
 
-      const OCTAVES = Math.log2((sampleRate / 2.205) / 20);
-      const INTERVAL = (OCTAVES * 12) / numBands;
-      const q = Math.SQRT2 / (OCTAVES / numBands);
+      // Frequency plan: log-spaced from ~80 Hz to ~Nyquist*0.45 (Vocodex-like)
+      const fLow = 80;
+      const fHigh = sampleRate * 0.45;
+      const logLow = Math.log(fLow);
+      const logHigh = Math.log(fHigh);
+      const formantRatio = Math.pow(2, formant / 12); // semitone formant shift on carrier
+
+      // Bandwidth slider 0.1–2.0 → Q mapping (higher bandwidth = lower Q)
+      // Vocodex bandwidth is fairly wide by default
+      const bw = Math.max(0.1, Math.min(2, bandwidth)); // 0.1 .. 2 from UI /100 already? UI is 10-200 → /100 = 0.1-2
+      const baseQ = 1.2 / bw; // narrow (high Q) when bw low
+
+      // Attack / Release in approximate milliseconds → coefficients
+      // attack: 1–100 → ~0.5ms–50ms, release: 5–200 → ~2ms–150ms
+      function makeEnvFollower(atkMs, relMs, sr) {
+        const atkCoef = Math.exp(-1 / (Math.max(0.2, atkMs) * 0.001 * sr));
+        const relCoef = Math.exp(-1 / (Math.max(0.5, relMs) * 0.001 * sr));
+        let env = 0;
+        return {
+          process(x) {
+            const a = x < 0 ? -x : x;
+            if (a > env) env = atkCoef * (env - a) + a;
+            else env = relCoef * (env - a) + a;
+            return env;
+          }
+        };
+      }
 
       const outL = new Float32Array(length);
       const outR = new Float32Array(length);
       const CHUNK = 16384;
       const yieldToUI = () => new Promise(r => setTimeout(r, 0));
 
-      let f = 20 * Math.pow(2, INTERVAL / 24);
       let bandsDone = 0;
 
       for (let b = 0; b < numBands; b++) {
-        if (f >= sampleRate * 0.48) break;
+        // Log-spaced center frequency for modulator analysis
+        const t = (b + 0.5) / numBands;
+        const fMod = Math.exp(logLow + t * (logHigh - logLow));
+        if (fMod >= sampleRate * 0.48) break;
 
-        const modBP = makeBandpass(f, q, sampleRate);
-        const carBP1L = makeBandpass(f, q, sampleRate);
-        const carBP1R = makeBandpass(f, q, sampleRate);
-        const carBP2L = makeBandpass(f, q, sampleRate);
-        const carBP2R = makeBandpass(f, q, sampleRate);
+        // Carrier band can be formant-shifted
+        const fCar = Math.min(sampleRate * 0.48, fMod * formantRatio);
 
-        const envCutoff = Math.max(1, f / distance);
-        const envFilters = [];
-        for (let s = 0; s < smoothOrder; s++) envFilters.push(makeLowpass1(envCutoff, sampleRate));
+        // Q slightly tighter in low-mids (presence), wider at extremes
+        let q = baseQ;
+        if (fMod > 200 && fMod < 2000) q *= 1.15;
+        else if (fMod > 5000) q *= 0.85;
 
-        const pan = (b % 2 === 0) ? -width : width;
+        const modBP = makeBandpass(fMod, q, sampleRate);
+        const carBP_L = makeBandpass(fCar, q, sampleRate);
+        const carBP_R = makeBandpass(fCar, q, sampleRate);
+        // mild second pass for steeper skirts (cleaner Vocodex-like isolation)
+        const carBP2_L = makeBandpass(fCar, q, sampleRate);
+        const carBP2_R = makeBandpass(fCar, q, sampleRate);
+
+        const envFollow = makeEnvFollower(attack, release, sampleRate);
+
+        // mild alternating stereo for width without smearing formants
+        const pan = (b % 2 === 0) ? -width * 0.85 : width * 0.85;
         const gL = Math.cos((pan + 1) * Math.PI / 4);
         const gR = Math.sin((pan + 1) * Math.PI / 4);
 
+        // slight presence boost in the classic "voice power" region
+        let bandGain = 1;
+        if (fMod > 250 && fMod < 1800) bandGain = 1.2;
+        else if (fMod > 4000) bandGain = 0.75;
+
         for (let i = 0; i < length; i++) {
           const m = modBP.process(mod[i]);
-          let env = m < 0 ? -m : m;
-          for (const filt of envFilters) env = filt.process(env);
+          const env = envFollow.process(m);
 
-          const cL = carBP1L.process(carL[i]);
-          const cR = carBP1R.process(carR[i]);
-          const bandL = carBP2L.process(env * cL);
-          const bandR = carBP2R.process(env * cR);
-          outL[i] += bandL * gL + bandR * (1 - gR) * 0.25;
-          outR[i] += bandR * gR + bandL * (1 - gL) * 0.25;
+          let cL = carBP_L.process(carL[i]);
+          let cR = carBP_R.process(carR[i]);
+          cL = carBP2_L.process(cL);
+          cR = carBP2_R.process(cR);
+
+          const bandL = env * cL * bandGain;
+          const bandR = env * cR * bandGain;
+          outL[i] += bandL * gL + bandR * (1 - gR) * 0.2;
+          outR[i] += bandR * gR + bandL * (1 - gL) * 0.2;
 
           if ((i & (CHUNK - 1)) === 0 && i > 0) await yieldToUI();
         }
 
         bandsDone++;
-        f *= Math.pow(2, INTERVAL / 12);
         if (onProgress) onProgress((bandsDone / numBands) * 100, bandsDone, numBands);
         await yieldToUI();
       }
 
+      // Soft peak normalize
       let peak = 0;
       for (let i = 0; i < length; i++) {
         const a = Math.max(Math.abs(outL[i]), Math.abs(outR[i]));
