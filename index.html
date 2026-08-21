@@ -14,6 +14,7 @@
       --text: #e8ecf4;
       --muted: #8b95a8;
       --danger: #ff5c7a;
+      --bluek: #7b6cff;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     @font-face {
@@ -35,7 +36,7 @@
     }
     h1 {
       font-size: 1.75rem;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: -0.02em;
       margin-bottom: 0.35rem;
       background: linear-gradient(135deg, var(--accent), #7b6cff);
@@ -46,10 +47,10 @@
     .subtitle {
       color: var(--muted);
       font-size: 0.9rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
       text-align: center;
-      max-width: 460px;
-      line-height: 1.4;
+      max-width: 480px;
+      line-height: 1.45;
     }
     .card {
       background: var(--surface);
@@ -57,46 +58,80 @@
       border-radius: 16px;
       padding: 1.75rem;
       width: 100%;
-      max-width: 520px;
+      max-width: 540px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .mode-switch {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 1.25rem;
+      background: #1c212c;
+      border-radius: 12px;
+      padding: 0.3rem;
+      border: 1px solid var(--border);
+    }
+    .mode-btn {
+      flex: 1;
+      padding: 0.6rem 0.5rem;
+      border: none;
+      border-radius: 9px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .mode-btn.active-audacity {
+      background: var(--accent);
+      color: #0d0f14;
+    }
+    .mode-btn.active-bluek {
+      background: var(--bluek);
+      color: #fff;
+    }
+    .mode-btn:not(.active-audacity):not(.active-bluek):hover {
+      color: var(--text);
+      background: #252b38;
     }
     .drop-zone {
       border: 2px dashed var(--border);
       border-radius: 12px;
-      padding: 1.75rem 1.5rem;
+      padding: 1.5rem 1.25rem;
       text-align: center;
       cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.55rem;
     }
     .drop-zone:hover, .drop-zone.dragover {
       border-color: var(--accent);
       background: rgba(0, 229, 195, 0.05);
     }
     .drop-zone input { display: none; }
-    .drop-zone .icon { font-size: 1.1rem; margin-bottom: 0.4rem; opacity: 0.85; color: var(--accent); }
-    .drop-zone p { color: var(--muted); font-size: 0.9rem; }
+    .drop-zone .icon { font-size: 1.05rem; margin-bottom: 0.35rem; opacity: 0.85; color: var(--accent); }
+    .drop-zone p { color: var(--muted); font-size: 0.88rem; }
     .drop-zone .filename {
       color: var(--accent);
       font-weight: 500;
-      margin-top: 0.45rem;
+      margin-top: 0.4rem;
       word-break: break-all;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
     }
     .controls {
       display: flex;
-      gap: 0.55rem;
+      gap: 0.5rem;
       flex-wrap: wrap;
-      margin-bottom: 1.1rem;
-      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+      margin-top: 0.6rem;
     }
     button {
       flex: 1;
-      min-width: 100px;
-      padding: 0.65rem 0.9rem;
+      min-width: 95px;
+      padding: 0.62rem 0.85rem;
       border: none;
       border-radius: 10px;
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       font-weight: 600;
       cursor: pointer;
       transition: transform 0.15s, opacity 0.15s, background 0.2s;
@@ -115,27 +150,38 @@
     .params {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.8rem;
-      margin: 1.1rem 0;
+      gap: 0.75rem;
+      margin: 1rem 0;
     }
+    .params.hidden { display: none; }
     label {
       display: flex;
       flex-direction: column;
-      gap: 0.3rem;
-      font-size: 0.78rem;
+      gap: 0.28rem;
+      font-size: 0.76rem;
       color: var(--muted);
     }
     input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .mode-bluek input[type="range"] { accent-color: var(--bluek); }
     .value-display {
       color: var(--text);
       font-weight: 500;
       font-variant-numeric: tabular-nums;
     }
+    select {
+      background: #1c212c;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.4rem 0.5rem;
+      font-size: 0.82rem;
+      font-family: inherit;
+    }
     .status {
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       color: var(--muted);
       min-height: 1.3em;
-      margin-bottom: 1rem;
+      margin-bottom: 0.9rem;
       text-align: center;
     }
     .status.error { color: var(--danger); }
@@ -159,13 +205,13 @@
     }
     audio { display: none; }
     .section-title {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--muted);
-      margin-bottom: 0.45rem;
+      margin-bottom: 0.4rem;
     }
-    .audio-block { margin-bottom: 1.05rem; }
+    .audio-block { margin-bottom: 1rem; }
     .waveform-wrap {
       position: relative;
       width: 100%;
@@ -173,7 +219,7 @@
       background: #0f1218;
       border: 1px solid var(--border);
       border-radius: 8px;
-      margin-bottom: 0.45rem;
+      margin-bottom: 0.4rem;
       overflow: hidden;
       cursor: pointer;
     }
@@ -190,20 +236,20 @@
     .transport {
       display: flex;
       align-items: center;
-      gap: 0.45rem;
+      gap: 0.4rem;
       background: #1c212c;
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 0.45rem 0.55rem;
+      padding: 0.4rem 0.5rem;
     }
     .transport button {
       flex: none;
       min-width: 0;
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       padding: 0;
       border-radius: 8px;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -223,11 +269,11 @@
     }
     .transport .time {
       flex: 1;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-variant-numeric: tabular-nums;
       color: var(--muted);
       text-align: center;
-      min-width: 85px;
+      min-width: 80px;
     }
     .progress-wrap {
       flex: 1.3;
@@ -246,64 +292,131 @@
       pointer-events: none;
     }
     .footer {
-      margin-top: 1.4rem;
+      margin-top: 1.3rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      max-width: 480px;
+      line-height: 1.4;
+    }
+    .mode-hint {
       font-size: 0.75rem;
       color: var(--muted);
       text-align: center;
+      margin-bottom: 0.8rem;
+      min-height: 1.2em;
     }
   </style>
 </head>
 <body>
   <h1>BlueK Vocoder</h1>
   <p class="subtitle">
-    Multiband vocoder matching Audacity’s algorithm.<br>
-    File 1 = <strong>modulator</strong> · File 2 = <strong>carrier</strong>.
+    Multiband vocoder · Audacity Nyquist algorithm + BlueK custom mode<br>
+    File 1 = <strong>modulator</strong> · File 2 = <strong>carrier</strong><br>
+    Audio &amp; video supported (video → audio extraction)
   </p>
-
   <div class="card">
+    <div class="mode-switch">
+      <button type="button" class="mode-btn active-audacity" id="modeAudacity">Audacity Nyquist</button>
+      <button type="button" class="mode-btn" id="modeBlueK">BlueK Custom</button>
+    </div>
+    <div class="mode-hint" id="modeHint">Faithful port of Audacity’s official Vocoder (Nyquist). Stereo right channel = carrier.</div>
+
     <div class="drop-zone" id="dropZoneMod">
       <div class="icon">Input</div>
-      <p><strong>1. Modulator</strong> — voice / input (drop or click)</p>
+      <p><strong>1. Modulator</strong> — voice / input / video (drop or click)</p>
       <div class="filename" id="fileNameMod"></div>
-      <input type="file" id="fileInputMod" accept="audio/*">
+      <input type="file" id="fileInputMod" accept="audio/*,video/*">
     </div>
     <div class="drop-zone" id="dropZoneCar">
       <div class="icon">Carrier</div>
-      <p><strong>2. Carrier</strong> — synth / pad / noise (drop or click)</p>
+      <p><strong>2. Carrier</strong> — synth / pad / noise / video (drop or click)</p>
       <div class="filename" id="fileNameCar"></div>
-      <input type="file" id="fileInputCar" accept="audio/*">
+      <input type="file" id="fileInputCar" accept="audio/*,video/*">
     </div>
 
-    <div class="params">
+    <!-- Audacity / Nyquist controls -->
+    <div class="params" id="paramsAudacity">
       <label>
         Bands
-        <input type="range" id="bands" min="10" max="80" value="40" step="1">
-        <span class="value-display" id="bandsVal">40</span>
+        <input type="range" id="bandsA" min="10" max="120" value="40" step="1">
+        <span class="value-display" id="bandsAVal">40</span>
       </label>
       <label>
         Distance
-        <input type="range" id="distance" min="1" max="60" value="20" step="1">
-        <span class="value-display" id="distanceVal">20</span>
+        <input type="range" id="distanceA" min="1" max="120" value="20" step="1">
+        <span class="value-display" id="distanceAVal">20</span>
       </label>
       <label>
         Carrier Level %
-        <input type="range" id="carrierPct" min="0" max="100" value="100" step="1">
-        <span class="value-display" id="carrierVal">100</span>
+        <input type="range" id="carrierA" min="0" max="100" value="100" step="1">
+        <span class="value-display" id="carrierAVal">100</span>
       </label>
       <label>
-        Extra Noise %
-        <input type="range" id="noisePct" min="0" max="100" value="0" step="1">
-        <span class="value-display" id="noiseVal">0</span>
+        White Noise %
+        <input type="range" id="noiseA" min="0" max="100" value="0" step="1">
+        <span class="value-display" id="noiseAVal">0</span>
       </label>
       <label>
         Radar Needles %
-        <input type="range" id="radarPct" min="0" max="100" value="0" step="1">
-        <span class="value-display" id="radarVal">0</span>
+        <input type="range" id="radarA" min="0" max="100" value="0" step="1">
+        <span class="value-display" id="radarAVal">0</span>
       </label>
       <label>
         Radar Freq (Hz)
-        <input type="range" id="radarFreq" min="1" max="100" value="30" step="1">
-        <span class="value-display" id="radarFreqVal">30</span>
+        <input type="range" id="radarFreqA" min="1" max="100" value="30" step="1">
+        <span class="value-display" id="radarFreqAVal">30</span>
+      </label>
+      <label style="grid-column: 1 / -1">
+        Output
+        <select id="outputChoice">
+          <option value="both">Both Channels (stereo)</option>
+          <option value="right">Right Only (mono result)</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- BlueK custom controls -->
+    <div class="params mode-bluek hidden" id="paramsBlueK">
+      <label>
+        Bands
+        <input type="range" id="bandsB" min="10" max="80" value="40" step="1">
+        <span class="value-display" id="bandsBVal">40</span>
+      </label>
+      <label>
+        Distance
+        <input type="range" id="distanceB" min="1" max="60" value="20" step="1">
+        <span class="value-display" id="distanceBVal">20</span>
+      </label>
+      <label>
+        Carrier Level %
+        <input type="range" id="carrierB" min="0" max="100" value="100" step="1">
+        <span class="value-display" id="carrierBVal">100</span>
+      </label>
+      <label>
+        Extra Noise %
+        <input type="range" id="noiseB" min="0" max="100" value="0" step="1">
+        <span class="value-display" id="noiseBVal">0</span>
+      </label>
+      <label>
+        Radar Needles %
+        <input type="range" id="radarB" min="0" max="100" value="0" step="1">
+        <span class="value-display" id="radarBVal">0</span>
+      </label>
+      <label>
+        Radar Freq (Hz)
+        <input type="range" id="radarFreqB" min="1" max="100" value="30" step="1">
+        <span class="value-display" id="radarFreqBVal">30</span>
+      </label>
+      <label>
+        Stereo Width
+        <input type="range" id="widthB" min="0" max="100" value="70" step="1">
+        <span class="value-display" id="widthBVal">70</span>
+      </label>
+      <label>
+        Envelope Smooth
+        <input type="range" id="smoothB" min="1" max="8" value="4" step="1">
+        <span class="value-display" id="smoothBVal">4</span>
       </label>
     </div>
 
@@ -312,7 +425,6 @@
       <button class="btn-secondary" id="reprocessBtn" disabled>Reprocess</button>
       <button class="btn-secondary" id="downloadBtn" disabled>Download WAV</button>
     </div>
-
     <div class="status" id="status">Ready — load modulator + carrier files</div>
     <div class="progress-outer" id="progressOuter"><div class="progress-inner" id="progressInner"></div></div>
 
@@ -331,7 +443,6 @@
         <span class="time">0:00 / 0:00</span>
       </div>
     </div>
-
     <div class="audio-block" id="processedBlock" style="display:none">
       <div class="section-title">Vocoded Output</div>
       <div class="waveform-wrap" data-target="processed">
@@ -348,10 +459,37 @@
       </div>
     </div>
   </div>
-
-  <p class="footer">This has audacity vocoder in it.</p>
+  <p class="footer">
+    You can switch to modes!
+  </p>
 
   <script>
+    let currentMode = 'audacity';
+    const modeAudacityBtn = document.getElementById('modeAudacity');
+    const modeBlueKBtn = document.getElementById('modeBlueK');
+    const paramsAudacity = document.getElementById('paramsAudacity');
+    const paramsBlueK = document.getElementById('paramsBlueK');
+    const modeHint = document.getElementById('modeHint');
+
+    function setMode(mode) {
+      currentMode = mode;
+      if (mode === 'audacity') {
+        modeAudacityBtn.classList.add('active-audacity');
+        modeBlueKBtn.classList.remove('active-bluek');
+        paramsAudacity.classList.remove('hidden');
+        paramsBlueK.classList.add('hidden');
+        modeHint.textContent = 'Faithful port of Audacity’s official Vocoder (Nyquist). Stereo right channel = carrier.';
+      } else {
+        modeAudacityBtn.classList.remove('active-audacity');
+        modeBlueKBtn.classList.add('active-bluek');
+        paramsAudacity.classList.add('hidden');
+        paramsBlueK.classList.remove('hidden');
+        modeHint.textContent = 'BlueK custom engine — stereo width, higher-order envelope, creative controls.';
+      }
+    }
+    modeAudacityBtn.addEventListener('click', () => setMode('audacity'));
+    modeBlueKBtn.addEventListener('click', () => setMode('bluek'));
+
     const dropZoneMod = document.getElementById('dropZoneMod');
     const dropZoneCar = document.getElementById('dropZoneCar');
     const fileInputMod = document.getElementById('fileInputMod');
@@ -368,13 +506,6 @@
     const processedAudio = document.getElementById('processedAudio');
     const originalBlock = document.getElementById('originalBlock');
     const processedBlock = document.getElementById('processedBlock');
-
-    const bandsSlider = document.getElementById('bands');
-    const distanceSlider = document.getElementById('distance');
-    const carrierPctSlider = document.getElementById('carrierPct');
-    const noisePctSlider = document.getElementById('noisePct');
-    const radarPctSlider = document.getElementById('radarPct');
-    const radarFreqSlider = document.getElementById('radarFreq');
 
     let modArrayBuffer = null;
     let carArrayBuffer = null;
@@ -403,17 +534,15 @@
       progressOuter.classList.remove('active');
       progressInner.style.width = '0%';
     }
-    function updateSliders() {
-      document.getElementById('bandsVal').textContent = bandsSlider.value;
-      document.getElementById('distanceVal').textContent = distanceSlider.value;
-      document.getElementById('carrierVal').textContent = carrierPctSlider.value;
-      document.getElementById('noiseVal').textContent = noisePctSlider.value;
-      document.getElementById('radarVal').textContent = radarPctSlider.value;
-      document.getElementById('radarFreqVal').textContent = radarFreqSlider.value;
+
+    function bindSlider(id, valId) {
+      const s = document.getElementById(id);
+      const v = document.getElementById(valId);
+      s.addEventListener('input', () => { v.textContent = s.value; });
     }
-    [bandsSlider, distanceSlider, carrierPctSlider, noisePctSlider, radarPctSlider, radarFreqSlider]
-      .forEach(s => s.addEventListener('input', updateSliders));
-    updateSliders();
+    ['bandsA','distanceA','carrierA','noiseA','radarA','radarFreqA',
+     'bandsB','distanceB','carrierB','noiseB','radarB','radarFreqB','widthB','smoothB']
+      .forEach(id => bindSlider(id, id + 'Val'));
 
     function formatTime(sec) {
       if (!isFinite(sec) || sec < 0) return '0:00';
@@ -479,7 +608,6 @@
     }
     wireTransport(originalAudio, 'original');
     wireTransport(processedAudio, 'processed');
-
     document.querySelectorAll('.waveform-wrap').forEach(wrap => {
       wrap.addEventListener('click', (e) => {
         const target = wrap.dataset.target;
@@ -561,17 +689,131 @@
         if (input.files.length) onFile(input.files[0]);
       });
     }
-    function isAudioFile(file) {
-      return file.type.startsWith('audio/') || /\.(mp3|wav|ogg|flac|m4a|aac|webm)$/i.test(file.name);
+    function isMediaFile(file) {
+      return file.type.startsWith('audio/') ||
+             file.type.startsWith('video/') ||
+             /\.(mp3|wav|ogg|flac|m4a|aac|webm|mp4|mov|mkv|avi|m4v|mpeg|mpg)$/i.test(file.name);
+    }
+    function isVideoFile(file) {
+      return file.type.startsWith('video/') ||
+             /\.(mp4|mov|mkv|avi|m4v|mpeg|mpg|webm)$/i.test(file.name);
+    }
+
+    async function extractAudioFromVideo(file, onProgress) {
+      const video = document.createElement('video');
+      video.playsInline = true;
+      video.muted = true;
+      video.preload = 'auto';
+      video.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none';
+      document.body.appendChild(video);
+      const objectUrl = URL.createObjectURL(file);
+      video.src = objectUrl;
+      try {
+        await new Promise((resolve, reject) => {
+          const onMeta = () => { cleanup(); resolve(); };
+          const onErr = () => { cleanup(); reject(new Error('Could not load video metadata')); };
+          function cleanup() {
+            video.removeEventListener('loadedmetadata', onMeta);
+            video.removeEventListener('error', onErr);
+          }
+          video.addEventListener('loadedmetadata', onMeta);
+          video.addEventListener('error', onErr);
+        });
+        if (!isFinite(video.duration) || video.duration <= 0)
+          throw new Error('Invalid or unknown video duration');
+
+        const stream = (typeof video.captureStream === 'function')
+          ? video.captureStream()
+          : (typeof video.mozCaptureStream === 'function' ? video.mozCaptureStream() : null);
+        if (!stream) throw new Error('Browser does not support video.captureStream()');
+
+        const audioTracks = stream.getAudioTracks();
+        if (audioTracks.length === 0) throw new Error('Video has no audio track');
+        const audioOnly = new MediaStream(audioTracks);
+
+        let mimeType = '';
+        for (const c of ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg','audio/mp4']) {
+          if (MediaRecorder.isTypeSupported(c)) { mimeType = c; break; }
+        }
+        const recorder = new MediaRecorder(audioOnly, mimeType ? { mimeType } : undefined);
+        const chunks = [];
+        recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+        const stopped = new Promise(resolve => {
+          recorder.onstop = () => resolve(new Blob(chunks, { type: recorder.mimeType || 'audio/webm' }));
+        });
+        recorder.start(200);
+        await video.play();
+        const duration = video.duration;
+        const progressTimer = setInterval(() => {
+          if (onProgress && duration > 0)
+            onProgress(Math.min(99, (video.currentTime / duration) * 100));
+        }, 120);
+        await new Promise((resolve, reject) => {
+          const onEnded = () => { cleanup(); resolve(); };
+          const onError = () => { cleanup(); reject(new Error('Video playback error')); };
+          function cleanup() {
+            video.removeEventListener('ended', onEnded);
+            video.removeEventListener('error', onError);
+          }
+          video.addEventListener('ended', onEnded);
+          video.addEventListener('error', onError);
+        });
+        clearInterval(progressTimer);
+        if (onProgress) onProgress(100);
+        if (recorder.state !== 'inactive') recorder.stop();
+        const blob = await stopped;
+        const ab = await blob.arrayBuffer();
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        let audioBuffer;
+        try {
+          audioBuffer = await ctx.decodeAudioData(ab.slice(0));
+        } catch (decErr) {
+          await ctx.close();
+          throw new Error('Failed to decode extracted audio: ' + (decErr.message || decErr));
+        }
+        await ctx.close();
+        return audioBuffer;
+      } finally {
+        try {
+          video.pause();
+          video.removeAttribute('src');
+          video.load();
+          if (video.parentNode) video.parentNode.removeChild(video);
+        } catch (_) {}
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
+
+    async function getAudioArrayBuffer(file, onProgress) {
+      const ab = await file.arrayBuffer();
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        await ctx.decodeAudioData(ab.slice(0));
+        await ctx.close();
+        return ab;
+      } catch (directErr) {
+        if (!isVideoFile(file)) throw directErr;
+        const audioBuffer = await extractAudioFromVideo(file, onProgress);
+        const wavBlob = audioBufferToWav(audioBuffer);
+        return await wavBlob.arrayBuffer();
+      }
     }
 
     wireDropZone(dropZoneMod, fileInputMod, async (file) => {
-      if (!isAudioFile(file)) { setStatus('Please choose an audio file for modulator', 'error'); return; }
+      if (!isMediaFile(file)) {
+        setStatus('Please choose an audio or video file for modulator', 'error');
+        return;
+      }
       modFileName = file.name.replace(/\.[^.]+$/, '') || 'modulator';
       fileNameMod.textContent = file.name;
-      setStatus('Loading modulator…');
+      setStatus(isVideoFile(file) ? 'Loading modulator video…' : 'Loading modulator…');
+      hideProgress();
       try {
-        modArrayBuffer = await file.arrayBuffer();
+        modArrayBuffer = await getAudioArrayBuffer(file, (pct) => {
+          setProgress(pct);
+          setStatus('Extracting audio from video… ' + Math.round(pct) + '%');
+        });
+        hideProgress();
         if (originalAudio.src) URL.revokeObjectURL(originalAudio.src);
         originalAudio.src = URL.createObjectURL(file);
         originalBlock.style.display = 'block';
@@ -585,23 +827,39 @@
         updateProcessButtons();
         setStatus(modArrayBuffer && carArrayBuffer ? 'Both files ready — click Process' : 'Modulator loaded — now add a carrier', 'ok');
       } catch (err) {
-        setStatus('Failed to load modulator: ' + err.message, 'error');
+        hideProgress();
+        console.error(err);
+        setStatus('Failed to load modulator: ' + (err.message || err), 'error');
+        modArrayBuffer = null;
+        updateProcessButtons();
       }
     });
 
     wireDropZone(dropZoneCar, fileInputCar, async (file) => {
-      if (!isAudioFile(file)) { setStatus('Please choose an audio file for carrier', 'error'); return; }
+      if (!isMediaFile(file)) {
+        setStatus('Please choose an audio or video file for carrier', 'error');
+        return;
+      }
       fileNameCar.textContent = file.name;
-      setStatus('Loading carrier…');
+      setStatus(isVideoFile(file) ? 'Loading carrier video…' : 'Loading carrier…');
+      hideProgress();
       try {
-        carArrayBuffer = await file.arrayBuffer();
+        carArrayBuffer = await getAudioArrayBuffer(file, (pct) => {
+          setProgress(pct);
+          setStatus('Extracting audio from video… ' + Math.round(pct) + '%');
+        });
+        hideProgress();
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         await ctx.decodeAudioData(carArrayBuffer.slice(0));
         await ctx.close();
         updateProcessButtons();
         setStatus(modArrayBuffer && carArrayBuffer ? 'Both files ready — click Process' : 'Carrier loaded — now add a modulator', 'ok');
       } catch (err) {
-        setStatus('Failed to load carrier: ' + err.message, 'error');
+        hideProgress();
+        console.error(err);
+        setStatus('Failed to load carrier: ' + (err.message || err), 'error');
+        carArrayBuffer = null;
+        updateProcessButtons();
       }
     });
 
@@ -618,42 +876,56 @@
       downloadBtn.disabled = true;
       setStatus('Decoding…');
       setProgress(0);
-
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const modDecoded = await audioCtx.decodeAudioData(modArrayBuffer.slice(0));
         const carDecoded = await audioCtx.decodeAudioData(carArrayBuffer.slice(0));
         await audioCtx.close();
-
         const dur = modDecoded.duration;
-        setStatus('Running vocoder (' + dur.toFixed(1) + 's, ' + bandsSlider.value + ' bands)…');
+        const modeLabel = currentMode === 'audacity' ? 'Audacity Nyquist' : 'BlueK';
+        setStatus('Running ' + modeLabel + ' vocoder (' + dur.toFixed(1) + 's)…');
 
-        processedBuffer = await applyAudacityVocoder(modDecoded, carDecoded, {
-          numBands: parseInt(bandsSlider.value, 10),
-          distance: parseFloat(distanceSlider.value),
-          carrierPct: parseFloat(carrierPctSlider.value),
-          noisePct: parseFloat(noisePctSlider.value),
-          radarPct: parseFloat(radarPctSlider.value),
-          radarFreq: parseFloat(radarFreqSlider.value)
-        }, (pct, band, total) => {
-          setProgress(pct);
-          setStatus('Vocoding… band ' + band + '/' + total + ' (' + Math.round(pct) + '%)');
-        });
+        if (currentMode === 'audacity') {
+          processedBuffer = await applyNyquistVocoder(modDecoded, carDecoded, {
+            numBands: parseInt(document.getElementById('bandsA').value, 10),
+            distance: parseFloat(document.getElementById('distanceA').value),
+            carrierPct: parseFloat(document.getElementById('carrierA').value),
+            noisePct: parseFloat(document.getElementById('noiseA').value),
+            radarPct: parseFloat(document.getElementById('radarA').value),
+            radarFreq: parseFloat(document.getElementById('radarFreqA').value),
+            outputChoice: document.getElementById('outputChoice').value
+          }, (pct, band, total) => {
+            setProgress(pct);
+            setStatus('Nyquist vocoding… band ' + band + '/' + total + ' (' + Math.round(pct) + '%)');
+          });
+        } else {
+          processedBuffer = await applyBlueKVocoder(modDecoded, carDecoded, {
+            numBands: parseInt(document.getElementById('bandsB').value, 10),
+            distance: parseFloat(document.getElementById('distanceB').value),
+            carrierPct: parseFloat(document.getElementById('carrierB').value),
+            noisePct: parseFloat(document.getElementById('noiseB').value),
+            radarPct: parseFloat(document.getElementById('radarB').value),
+            radarFreq: parseFloat(document.getElementById('radarFreqB').value),
+            width: parseFloat(document.getElementById('widthB').value) / 100,
+            smoothOrder: parseInt(document.getElementById('smoothB').value, 10)
+          }, (pct, band, total) => {
+            setProgress(pct);
+            setStatus('BlueK vocoding… band ' + band + '/' + total + ' (' + Math.round(pct) + '%)');
+          });
+        }
 
         const wavBlob = audioBufferToWav(processedBuffer);
         if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
         processedBlobUrl = URL.createObjectURL(wavBlob);
         processedAudio.src = processedBlobUrl;
         processedBlock.style.display = 'block';
-
         requestAnimationFrame(() => {
           drawWaveform(document.getElementById('processedWaveform'), processedBuffer, '#00e5c3', '#7b6cff');
           processedAudio.currentTime = 0;
           updateTransportUI(processedAudio, 'processed');
         });
-
         setProgress(100);
-        setStatus('Done — ' + processedBuffer.duration.toFixed(1) + 's stereo @ ' + processedBuffer.sampleRate + ' Hz', 'ok');
+        setStatus('Done — ' + processedBuffer.duration.toFixed(1) + 's @ ' + processedBuffer.sampleRate + ' Hz (' + modeLabel + ')', 'ok');
         downloadBtn.disabled = false;
       } catch (err) {
         console.error(err);
@@ -665,8 +937,122 @@
       }
     }
 
-    async function applyAudacityVocoder(modBuffer, carBuffer, opts, onProgress) {
-      const { numBands, distance, carrierPct, noisePct, radarPct, radarFreq } = opts;
+    // ── AUDACITY NYQUIST VOCODER (faithful port) ─────────────────────────
+    async function applyNyquistVocoder(modBuffer, carBuffer, opts, onProgress) {
+      const { numBands, distance, carrierPct, noisePct, radarPct, radarFreq, outputChoice } = opts;
+      const sampleRate = modBuffer.sampleRate;
+      const length = modBuffer.length;
+
+      const mod = new Float32Array(length);
+      if (modBuffer.numberOfChannels === 1) {
+        mod.set(modBuffer.getChannelData(0));
+      } else {
+        const L = modBuffer.getChannelData(0);
+        const R = modBuffer.getChannelData(1);
+        for (let i = 0; i < length; i++) mod[i] = (L[i] + R[i]) * 0.5;
+      }
+
+      const car = new Float32Array(length);
+      {
+        const cLen = carBuffer.length;
+        const c0 = carBuffer.getChannelData(0);
+        const c1 = carBuffer.numberOfChannels > 1 ? carBuffer.getChannelData(1) : c0;
+        for (let i = 0; i < length; i++) {
+          const idx = i % cLen;
+          car[i] = (c0[idx] + c1[idx]) * 0.5;
+        }
+      }
+
+      const TRACK_VOL = Math.sqrt(carrierPct / 100);
+      const NOISE_VOL = Math.pow(noisePct / 100, 2);
+      const RADAR_VOL = Math.sqrt(radarPct / 100);
+
+      for (let i = 0; i < length; i++) {
+        let v = TRACK_VOL === 0 ? 0 : (TRACK_VOL < 1 ? car[i] * TRACK_VOL : car[i]);
+        if (NOISE_VOL > 0) v += (Math.random() * 2 - 1) * NOISE_VOL;
+        car[i] = v;
+      }
+      if (RADAR_VOL > 0 && radarFreq > 0) {
+        const period = Math.max(1, Math.round(sampleRate / radarFreq));
+        for (let i = 0; i < length; i += period) car[i] += RADAR_VOL;
+      }
+
+      const OCTAVES = Math.log2((sampleRate / 2.205) / 20);
+      const INTERVAL = (OCTAVES * 12) / numBands;
+      const q = Math.SQRT2 / (OCTAVES / numBands);
+      let f = 20 * Math.pow(2, (INTERVAL / 2) / 12);
+
+      const result = new Float32Array(length);
+      const CHUNK = 16384;
+      const yieldToUI = () => new Promise(r => setTimeout(r, 0));
+      let bandsDone = 0;
+
+      for (let b = 0; b < numBands; b++) {
+        if (f >= sampleRate * 0.49) break;
+
+        const bpMod = makeBandpass(f, q, sampleRate);
+        const bpCar = makeBandpass(f, q, sampleRate);
+        const envCutoff = Math.max(1, f / distance);
+        // lowpass8 ≈ 4 cascaded biquad Butterworth lowpasses
+        const lp1 = makeLowpassBiquad(envCutoff, sampleRate);
+        const lp2 = makeLowpassBiquad(envCutoff, sampleRate);
+        const lp3 = makeLowpassBiquad(envCutoff, sampleRate);
+        const lp4 = makeLowpassBiquad(envCutoff, sampleRate);
+        const bpOut = makeBandpass(f, q, sampleRate);
+
+        for (let i = 0; i < length; i++) {
+          const m = bpMod.process(mod[i]);
+          const c = bpCar.process(car[i]);
+          let env = m < 0 ? -m : m;
+          env = lp1.process(env);
+          env = lp2.process(env);
+          env = lp3.process(env);
+          env = lp4.process(env);
+          result[i] += bpOut.process(env * c);
+          if ((i & (CHUNK - 1)) === 0 && i > 0) await yieldToUI();
+        }
+
+        bandsDone++;
+        f *= Math.pow(2, INTERVAL / 12);
+        if (onProgress) onProgress((bandsDone / numBands) * 100, bandsDone, numBands);
+        await yieldToUI();
+      }
+
+      const peakLimit = Math.min(length, 10000000);
+      let peak = 0;
+      for (let i = 0; i < peakLimit; i++) {
+        const a = Math.abs(result[i]);
+        if (a > peak) peak = a;
+      }
+      const scale = peak > 1e-12 ? 1 / peak : 1;
+      for (let i = 0; i < length; i++) result[i] *= scale;
+
+      const offline = new OfflineAudioContext(2, length, sampleRate);
+      const buf = offline.createBuffer(2, length, sampleRate);
+      if (outputChoice === 'right') {
+        buf.copyToChannel(result, 0);
+        buf.copyToChannel(result, 1);
+      } else {
+        const left = new Float32Array(length);
+        if (modBuffer.numberOfChannels >= 1) {
+          left.set(modBuffer.getChannelData(0).subarray(0, length));
+        }
+        let lp = 0;
+        for (let i = 0; i < peakLimit; i++) {
+          const a = Math.abs(left[i]);
+          if (a > lp) lp = a;
+        }
+        const ls = lp > 1e-12 ? 0.95 / lp : 1;
+        for (let i = 0; i < length; i++) left[i] *= ls;
+        buf.copyToChannel(left, 0);
+        buf.copyToChannel(result, 1);
+      }
+      return buf;
+    }
+
+    // ── BLUEK CUSTOM VOCODER ─────────────────────────────────────────────
+    async function applyBlueKVocoder(modBuffer, carBuffer, opts, onProgress) {
+      const { numBands, distance, carrierPct, noisePct, radarPct, radarFreq, width, smoothOrder } = opts;
       const sampleRate = modBuffer.sampleRate;
       const length = modBuffer.length;
 
@@ -695,7 +1081,6 @@
       const trackVol = Math.sqrt(carrierPct / 100);
       const noiseVol = Math.pow(noisePct / 100, 2);
       const radarVol = Math.sqrt(radarPct / 100);
-
       for (let i = 0; i < length; i++) {
         const n = noiseVol > 0 ? (Math.random() * 2 - 1) * noiseVol : 0;
         carL[i] = carL[i] * trackVol + n;
@@ -715,7 +1100,6 @@
 
       const outL = new Float32Array(length);
       const outR = new Float32Array(length);
-
       const CHUNK = 16384;
       const yieldToUI = () => new Promise(r => setTimeout(r, 0));
 
@@ -732,42 +1116,37 @@
         const carBP2R = makeBandpass(f, q, sampleRate);
 
         const envCutoff = Math.max(1, f / distance);
-        const envLP = makeLowpass(envCutoff, sampleRate);
+        const envFilters = [];
+        for (let s = 0; s < smoothOrder; s++) envFilters.push(makeLowpass1(envCutoff, sampleRate));
 
-        const pan = (b % 2 === 0) ? -0.7 : 0.7;
+        const pan = (b % 2 === 0) ? -width : width;
         const gL = Math.cos((pan + 1) * Math.PI / 4);
         const gR = Math.sin((pan + 1) * Math.PI / 4);
 
         for (let i = 0; i < length; i++) {
           const m = modBP.process(mod[i]);
-          const env = envLP.process(m < 0 ? -m : m);
+          let env = m < 0 ? -m : m;
+          for (const filt of envFilters) env = filt.process(env);
 
           const cL = carBP1L.process(carL[i]);
           const cR = carBP1R.process(carR[i]);
-
           const bandL = carBP2L.process(env * cL);
           const bandR = carBP2R.process(env * cR);
+          outL[i] += bandL * gL + bandR * (1 - gR) * 0.25;
+          outR[i] += bandR * gR + bandL * (1 - gL) * 0.25;
 
-          outL[i] += bandL * gL + bandR * (1 - gR) * 0.3;
-          outR[i] += bandR * gR + bandL * (1 - gL) * 0.3;
-
-          if ((i & (CHUNK - 1)) === 0 && i > 0) {
-            await yieldToUI();
-          }
+          if ((i & (CHUNK - 1)) === 0 && i > 0) await yieldToUI();
         }
 
         bandsDone++;
         f *= Math.pow(2, INTERVAL / 12);
-
         if (onProgress) onProgress((bandsDone / numBands) * 100, bandsDone, numBands);
         await yieldToUI();
       }
 
       let peak = 0;
       for (let i = 0; i < length; i++) {
-        const aL = outL[i] < 0 ? -outL[i] : outL[i];
-        const aR = outR[i] < 0 ? -outR[i] : outR[i];
-        const a = aL > aR ? aL : aR;
+        const a = Math.max(Math.abs(outL[i]), Math.abs(outR[i]));
         if (a > peak) peak = a;
       }
       const scale = peak > 1e-9 ? 0.95 / peak : 1;
@@ -783,6 +1162,7 @@
       return buf;
     }
 
+    // ── Filters ──────────────────────────────────────────────────────────
     function makeBandpass(freq, Q, sampleRate) {
       const w0 = 2 * Math.PI * freq / sampleRate;
       const alpha = Math.sin(w0) / (2 * Q);
@@ -801,7 +1181,30 @@
       };
     }
 
-    function makeLowpass(freq, sampleRate) {
+    function makeLowpassBiquad(freq, sampleRate) {
+      const w0 = 2 * Math.PI * Math.min(freq, sampleRate * 0.49) / sampleRate;
+      const cosw = Math.cos(w0);
+      const sinw = Math.sin(w0);
+      const alpha = sinw / (2 * Math.SQRT1_2);
+      const b0 = (1 - cosw) / 2;
+      const b1 = 1 - cosw;
+      const b2 = (1 - cosw) / 2;
+      const a0 = 1 + alpha;
+      const a1 = -2 * cosw;
+      const a2 = 1 - alpha;
+      const nb0 = b0 / a0, nb1 = b1 / a0, nb2 = b2 / a0;
+      const na1 = a1 / a0, na2 = a2 / a0;
+      let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+      return {
+        process(x) {
+          const y = nb0 * x + nb1 * x1 + nb2 * x2 - na1 * y1 - na2 * y2;
+          x2 = x1; x1 = x; y2 = y1; y1 = y;
+          return y;
+        }
+      };
+    }
+
+    function makeLowpass1(freq, sampleRate) {
       const x = Math.exp(-2 * Math.PI * freq / sampleRate);
       let y = 0;
       return {
@@ -855,7 +1258,7 @@
       if (!processedBlobUrl) return;
       const a = document.createElement('a');
       a.href = processedBlobUrl;
-      a.download = modFileName + '_bluekded.wav';
+      a.download = modFileName + (currentMode === 'audacity' ? '_nyquist.wav' : '_bluek.wav');
       a.click();
     });
   </script>
